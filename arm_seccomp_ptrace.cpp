@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <stddef.h>
 #include <sys/ptrace.h>
+
 #include <sys/reg.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -27,7 +28,7 @@ int main()
     if ((pid = fork()) == 0) {
         struct sock_filter filter[] = {
             BPF_STMT(BPF_LD+BPF_W+BPF_ABS, offsetof(struct seccomp_data, nr)),
-            BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_openat, 0, 2),
+            BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_openat, 0, 1),
             BPF_STMT(BPF_RET+BPF_K, SECCOMP_RET_TRACE),
             BPF_STMT(BPF_RET+BPF_K, SECCOMP_RET_ALLOW),
         };
@@ -92,12 +93,13 @@ static void process_signals(pid_t child)
             {
             case __NR_openat:
                 read_file(child, orig_file,regs);
-                printf("[Openat : %s]\n", orig_file);
+                printf("[Openiat %s]\n", orig_file);
                 if (strcmp(file_to_avoid, orig_file) == 0){
                     putdata(child,regs.regs[1],file_to_redirect,strlen(file_to_avoid)+1);
                 }
             }
         }
+            
         if (WIFEXITED(status)){
             break;
         }
